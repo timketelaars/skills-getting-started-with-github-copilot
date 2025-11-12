@@ -4,6 +4,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Function to unregister a participant
+  async function unregisterParticipant(activityName, email, liElement) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Remove the li element from DOM
+        liElement.remove();
+        
+        // Show success message
+        messageDiv.textContent = result.message;
+        messageDiv.className = "success";
+        messageDiv.classList.remove("hidden");
+        
+        // Hide message after 5 seconds
+        setTimeout(() => {
+          messageDiv.classList.add("hidden");
+        }, 5000);
+      } else {
+        messageDiv.textContent = result.detail || "Failed to unregister participant";
+        messageDiv.className = "error";
+        messageDiv.classList.remove("hidden");
+      }
+    } catch (error) {
+      messageDiv.textContent = "Failed to unregister participant. Please try again.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      console.error("Error unregistering participant:", error);
+    }
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -43,7 +81,26 @@ document.addEventListener("DOMContentLoaded", () => {
           ul.className = "participants-list";
           details.participants.forEach((p) => {
             const li = document.createElement("li");
-            li.textContent = p;
+            li.className = "participant-item";
+            
+            // Create a container for the participant info and delete button
+            const participantContent = document.createElement("span");
+            participantContent.className = "participant-content";
+            participantContent.textContent = p;
+            
+            // Create delete button
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "✕";
+            deleteBtn.title = "Unregister participant";
+            deleteBtn.type = "button";
+            deleteBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              await unregisterParticipant(name, p, li);
+            });
+            
+            li.appendChild(participantContent);
+            li.appendChild(deleteBtn);
             ul.appendChild(li);
           });
           participantsDiv.appendChild(ul);
